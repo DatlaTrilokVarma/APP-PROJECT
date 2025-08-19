@@ -1,0 +1,151 @@
+// DatabaseConnection.java
+package project.db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DatabaseConnection {
+  private static final String DB_URL = "jdbc:mysql://localhost:3306/outpass_system";
+  private static final String DB_USERNAME = "root";
+  private static final String DB_PASSWORD = "@Shiva777";
+
+  public static Connection getConnection() {
+    try {
+      return DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+    } catch (SQLException e) {
+      System.out.println("Error connecting to database: " + e.getMessage());
+      return null;
+    }
+  }
+}
+
+// OutpassRequestDAO.java
+package project.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import project.db.DatabaseConnection;
+import project.model.OutpassRequest;
+
+public class OutpassRequestDAO {
+  public void saveOutpassRequest(OutpassRequest request) {
+    Connection connection = DatabaseConnection.getConnection();
+    if (connection != null) {
+      try {
+        PreparedStatement statement = connection.prepareStatement("INSERT INTO outpass_requests (student_id, reason, date, days) VALUES (?, ?, ?, ?)");
+        statement.setInt(1, request.getStudentId());
+        statement.setString(2, request.getReason());
+        statement.setDate(3, request.getDate());
+        statement.setInt(4, request.getDays());
+        statement.executeUpdate();
+      } catch (SQLException e) {
+        System.out.println("Error saving outpass request: " + e.getMessage());
+      } finally {
+        try {
+          connection.close();
+        } catch (SQLException e) {
+          System.out.println("Error closing database connection: " + e.getMessage());
+        }
+      }
+    }
+  }
+
+  public List<OutpassRequest> getOutpassRequests() {
+    Connection connection = DatabaseConnection.getConnection();
+    if (connection != null) {
+      try {
+        PreparedStatement statement = connection.prepareStatement("SELECT * FROM outpass_requests");
+        ResultSet resultSet = statement.executeQuery();
+        List<OutpassRequest> requests = new ArrayList<>();
+        while (resultSet.next()) {
+          OutpassRequest request = new OutpassRequest();
+          request.setId(resultSet.getInt("id"));
+          request.setStudentId(resultSet.getInt("student_id"));
+          request.setReason(resultSet.getString("reason"));
+          request.setDate(resultSet.getDate("date"));
+          request.setDays(resultSet.getInt("days"));
+          request.setStatus(resultSet.getString("status"));
+          requests.add(request);
+        }
+        return requests;
+      } catch (SQLException e) {
+        System.out.println("Error retrieving outpass requests: " + e.getMessage());
+        return null;
+      } finally {
+        try {
+          connection.close();
+        } catch (SQLException e) {
+          System.out.println("Error closing database connection: " + e.getMessage());
+        }
+      }
+    }
+    return null;
+  }
+
+  public void updateOutpassRequestStatus(int requestId, String status) {
+    Connection connection = DatabaseConnection.getConnection();
+    if (connection != null) {
+      try {
+        PreparedStatement statement = connection.prepareStatement("UPDATE outpass_requests SET status = ? WHERE id = ?");
+        statement.setString(1, status);
+        statement.setInt(2, requestId);
+        statement.executeUpdate();
+      } catch (SQLException e) {
+        System.out.println("Error updating outpass request status: " + e.getMessage());
+      } finally {
+        try {
+          connection.close();
+        } catch (SQLException e) {
+          System.out.println("Error closing database connection: " + e.getMessage());
+        }
+      }
+    }
+  }
+}
+
+// OutpassRequest.java
+package project.model;
+
+import java.sql.Date;
+
+public class OutpassRequest {
+  private int id;
+  private int studentId;
+  private String reason;
+  private Date date;
+  private int days;
+  private String status;
+
+  public int getId() {
+    return id;
+  }
+
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  public int getStudentId() {
+    return studentId;
+  }
+
+  public void setStudentId(int studentId) {
+    this.studentId = studentId;
+  }
+
+  public String getReason() {
+    return reason;
+  }
+
+  public void setReason(String reason) {
+    this.reason = reason;
+  }
+
+  public Date getDate() {
+    return date;
+  }
